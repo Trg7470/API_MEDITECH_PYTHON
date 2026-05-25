@@ -6,6 +6,6 @@ def get_connection():
         host="localhost",
         database="MEDITECH_PLANIFAM",
         user="postgres",
-        password="isaac",
+        password="Vickytor19",
         cursor_factory=RealDictCursor
     )

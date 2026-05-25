@@ -9,7 +9,7 @@ ALGORITHM = "HS256"
 security = HTTPBearer()
 def crear_token(data: dict):
     datos = data.copy()
-    expiracion = datetime.utcnow + timedelta(minutes=60)
+    expiracion = datetime.utcnow() + timedelta(minutes=60)
     datos.update({"exp": expiracion})
     token = jwt.encode(datos, SECRET_KEY, algorithm=ALGORITHM)
     return token

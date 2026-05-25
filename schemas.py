@@ -1,62 +1,65 @@
 from pydantic import BaseModel
 from datetime import datetime, date
 
+
 class Login(BaseModel):
     email: str
     password: str
 
+
 class Usuarios(BaseModel):
-    Id_Usuario: int
-    Nombre: str
-    Apellido_Paterno: str
-    Apellido_Materno: str
-    Sexo: str
-    Fecha_Nacimiento: datetime
-    Direccion: str
-    Telefono: str
-    Especialidad: str
-    Cedula_Prof: str
-    Correo: str
-    Contrasena: str
-    Fecha_Registro: datetime
-    Estado: bool
-    Tipo_Usuario: str
-    User_Key: str
-    Ultimo_Acceso: datetime
+    id_usuario: int
+    nombre: str
+    apellido_paterno: str
+    apellido_materno: str
+    sexo: str
+    fecha_nacimiento: date
+    direccion: str
+    telefono: str
+    especialidad: str
+    cedula_prof: str
+    correo: str
+    contrasena: str
+    fecha_registro: datetime
+    estado: bool
+    tipo_usuario: str
+    user_key: str
+
 
 class Pacientes(BaseModel):
-    Id_Paciente: int
-    Nombre: str
-    Apellido_Paterno: str
-    Apellido_Materno: str
-    Sexo: str
-    Fecha_Nacimiento: datetime
-    Direccion: str
-    Correo: str
-    Telefono: str
-    Estado_Salud: str
-    Id_Usuario_Paciente: int
+    id_paciente: int
+    nombre: str
+    apellido_paterno: str
+    apellido_materno: str
+    sexo: str
+    fecha_nacimiento: date
+    direccion: str
+    correo: str
+    telefono: str
+    estado_salud: str
+    id_usuario_paciente: int
+
 
 class Expediente_Medico(BaseModel):
     _id: str | None
-    pacienteId: int
+    paciente_id: int
     antecedentes: str
     tratamientos: str
-    notasMedicas: str
-    planesPersonalizados: list["PlanPersonalizado"]
+    notas_medicas: str
+    planes_personalizados: list["PlanPersonalizado"]
     consultas: list["Consulta"]
     eventos: list["Evento"]
     monitoreos: list["Monitoreo"]
-    fechaCreacion: datetime
-    fechaActualizacion: datetime
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime
     estado: str
 
 
 class Monitoreo(BaseModel):
     _id: str
-    fechaRegistro: datetime
-    presionArterial: str
-    nivelGlucosa: str
+    fecha_registro: datetime
+    presion_arterial: str
+    nivel_glucosa: str
     temperatura: str
     sintomas: str
     comentarios: str
@@ -66,25 +69,25 @@ class PlanPersonalizado(BaseModel):
     _id: str
     descripcion: str
     objetivo: str
-    tipoPlan: str
+    tipo_plan: str
     duracion: str
     frecuencia: str
-    fechaInicio: datetime
-    fechaFin: datetime
+    fecha_inicio: datetime
+    fecha_fin: datetime
     estado: str
     observaciones: str
     recomendaciones: str
     contraindicaciones: str
-    metodosAnticonceptivos: list["MetodoAnticonceptivo"]
+    metodos_anticonceptivos: list["MetodoAnticonceptivo"]
 
 
 class MetodoAnticonceptivo(BaseModel):
     _id: str | None
-    metodoId: int
+    metodo_id: int
 
 
 class Consulta(BaseModel):
-    id_Consulta: str
+    id_consulta: str
     fecha: datetime
     hora: str
     motivo: str
@@ -94,22 +97,23 @@ class Consulta(BaseModel):
 
 class Evento(BaseModel):
     _id: str
-    tipoEvento: str
+    tipo_evento: str
     fecha: datetime
     hora: str
     descripcion: str
     estado: int
 
+
 class Metodos_Anticonceptivos(BaseModel):
-    IdMetodo: int
-    Tipo: str
-    Nombre: str
-    Descripcion: str
-    Efectividad: float
-    Uso_Recomendado: str
-    Frecuencia: str
-    Contraindicaciones: str
-    Efectos_Secundarios: str
-    Requiere_Receta: bool
-    Es_Reversible: bool
-    Disponible: bool
+    id_metodo: int
+    tipo: str
+    nombre: str
+    descripcion: str
+    efectividad: float
+    uso_recomendado: str
+    frecuencia: str
+    contraindicaciones: str
+    efectos_secundarios: str
+    requiere_receta: bool
+    es_reversible: bool
+    disponible: bool

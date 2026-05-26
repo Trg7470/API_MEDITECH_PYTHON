@@ -295,3 +295,349 @@ def eliminar_monitoreo(
     return {
         "mensaje": "Monitoreo eliminado exitosamente"
     }
+
+
+# PACIENTES
+
+# Consulta completa (todos los pacientes)
+@app.get("/pacientes", dependencies=[Depends(verificar_token)])
+def get_pacientes():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT * FROM Pacientes
+        ORDER BY Id_Paciente
+    """)
+
+    pacientes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return pacientes
+
+# Consulta Paciente por Id
+@app.get("/pacientes/{id}", dependencies=[Depends(verificar_token)])
+def get_paciente(id: int):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT * FROM Pacientes
+        WHERE Id_Paciente = %s
+    """, (id,))
+
+    paciente = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not paciente:
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    return paciente
+
+# Crear paciente
+@app.post("/pacientes", dependencies=[Depends(verificar_token)])
+def create_paciente(paciente: Pacientes):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO Pacientes (
+            Nombre,
+            Apellido_Paterno,
+            Apellido_Materno,
+            Sexo,
+            Fecha_Nacimiento,
+            Direccion,
+            Correo,
+            Telefono,
+            Estado_Salud,
+            Id_Usuario_Paciente
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        RETURNING Id_Paciente
+    """, (
+        paciente.nombre,
+        paciente.apellido_paterno,
+        paciente.apellido_materno,
+        paciente.sexo,
+        paciente.fecha_nacimiento,
+        paciente.direccion,
+        paciente.correo,
+        paciente.telefono,
+        paciente.estado_salud,
+        paciente.id_usuario_paciente
+    ))
+
+    nuevo_paciente = cursor.fetchone()
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Paciente creado correctamente",
+        "id_paciente": nuevo_paciente["id_paciente"]
+    }
+
+# Actualizar paciente
+@app.put("/pacientes/{id}", dependencies=[Depends(verificar_token)])
+def update_paciente(id: int, paciente: Pacientes):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE Pacientes
+        SET
+            Nombre = %s,
+            Apellido_Paterno = %s,
+            Apellido_Materno = %s,
+            Sexo = %s,
+            Fecha_Nacimiento = %s,
+            Direccion = %s,
+            Correo = %s,
+            Telefono = %s,
+            Estado_Salud = %s,
+            Id_Usuario_Paciente = %s
+        WHERE Id_Paciente = %s
+    """, (
+        paciente.nombre,
+        paciente.apellido_paterno,
+        paciente.apellido_materno,
+        paciente.sexo,
+        paciente.fecha_nacimiento,
+        paciente.direccion,
+        paciente.correo,
+        paciente.telefono,
+        paciente.estado_salud,
+        paciente.id_usuario_paciente,
+        id
+    ))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Paciente actualizado correctamente"
+    }
+
+# Eliminar paciente
+@app.delete("/pacientes/{id}", dependencies=[Depends(verificar_token)])
+def delete_paciente(id: int):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM Pacientes
+        WHERE Id_Paciente = %s
+    """, (id,))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Paciente eliminado correctamente"
+    }
+
+
+
+
+# Plan Personalizado
+
+# Consulta completa (todos los planes de un paciente)
+@app.get("/expedientes/{pacienteId}/planes", dependencies=[Depends(verificar_token)])
+def get_planes_personalizados(pacienteId: int):
+
+    expediente = expediente_medico.find_one({
+        "pacienteId": pacienteId
+    })
+
+    if not expediente:
+        raise HTTPException(
+            status_code=404,
+            detail="Expediente no encontrado"
+        )
+
+    planes = expediente.get("planesPersonalizados", [])
+
+    return convert_bson(planes)
+
+
+# Consulta plan personalizado por Id
+@app.get("/expedientes/{pacienteId}/planes/{planId}", dependencies=[Depends(verificar_token)])
+def get_plan_personalizado(pacienteId: int, planId: str):
+
+    expediente = expediente_medico.find_one({
+        "pacienteId": pacienteId
+    })
+
+    if not expediente:
+        raise HTTPException(
+            status_code=404,
+            detail="Expediente no encontrado"
+        )
+
+    planes = expediente.get("planesPersonalizados", [])
+
+    for plan in planes:
+
+        if str(plan["_id"]) == planId:
+            return convert_bson(plan)
+
+    raise HTTPException(
+        status_code=404,
+        detail="Plan no encontrado"
+    )
+
+
+# Crear plan personalizado
+@app.post("/expedientes/{pacienteId}/planes", dependencies=[Depends(verificar_token)])
+def create_plan_personalizado(pacienteId: int, plan: dict):
+
+    expediente = expediente_medico.find_one({
+        "pacienteId": pacienteId
+    })
+
+    if not expediente:
+        raise HTTPException(
+            status_code=404,
+            detail="Expediente no encontrado"
+        )
+
+    plan["_id"] = ObjectId()
+
+    expediente_medico.update_one(
+        {"pacienteId": pacienteId},
+        {
+            "$push": {
+                "planesPersonalizados": plan
+            }
+        }
+    )
+
+    return {
+        "message": "Plan personalizado agregado correctamente",
+        "plan": convert_bson(plan)
+    }
+
+
+# Actualizar plan personalizado
+@app.put("/expedientes/{pacienteId}/planes/{planId}", dependencies=[Depends(verificar_token)])
+def update_plan_personalizado(pacienteId: int, planId: str, plan_actualizado: dict):
+
+    expediente = expediente_medico.find_one({"pacienteId": pacienteId})
+
+    if not expediente:
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+
+    planes = expediente.get("planesPersonalizados", [])
+
+    plan_encontrado = False
+
+    for plan in planes:
+
+        if "_id" in plan and str(plan["_id"]) == planId:
+
+            plan["descripcion"] = plan_actualizado.get("descripcion", plan.get("descripcion"))
+            plan["objetivo"] = plan_actualizado.get("objetivo", plan.get("objetivo"))
+            plan["tipoPlan"] = plan_actualizado.get("tipoPlan", plan.get("tipoPlan"))
+            plan["duracion"] = plan_actualizado.get("duracion", plan.get("duracion"))
+            plan["frecuencia"] = plan_actualizado.get("frecuencia", plan.get("frecuencia"))
+            plan["fechaInicio"] = plan_actualizado.get("fechaInicio", plan.get("fechaInicio"))
+            plan["fechaFin"] = plan_actualizado.get("fechaFin", plan.get("fechaFin"))
+            plan["estado"] = plan_actualizado.get("estado", plan.get("estado"))
+            plan["observaciones"] = plan_actualizado.get("observaciones", plan.get("observaciones"))
+            plan["recomendaciones"] = plan_actualizado.get("recomendaciones", plan.get("recomendaciones"))
+            plan["contraindicaciones"] = plan_actualizado.get("contraindicaciones", plan.get("contraindicaciones"))
+            plan["metodosAnticonceptivos"] = plan_actualizado.get(
+                "metodosAnticonceptivos",
+                plan.get("metodosAnticonceptivos")
+            )
+
+            plan_encontrado = True
+            break
+
+    if not plan_encontrado:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+
+    expediente_medico.update_one(
+        {"pacienteId": pacienteId},
+        {
+            "$set": {
+                "planesPersonalizados": planes
+            }
+        }
+    )
+
+    return {
+        "message": "Plan actualizado correctamente",
+        "plan": convert_bson(plan)
+    }
+
+# Eliminar plan personalizado
+@app.delete("/expedientes/{pacienteId}/planes/{planId}", dependencies=[Depends(verificar_token)])
+def delete_plan_personalizado(pacienteId: int, planId: str):
+
+    expediente = expediente_medico.find_one({"pacienteId": pacienteId})
+
+    if not expediente:
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+
+    planes = expediente.get("planesPersonalizados", [])
+
+    nuevos_planes = [
+        plan for plan in planes
+        if "_id" not in plan or str(plan["_id"]) != planId
+    ]
+
+    if len(planes) == len(nuevos_planes):
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+
+    expediente_medico.update_one(
+        {"pacienteId": pacienteId},
+        {
+            "$set": {
+                "planesPersonalizados": nuevos_planes
+            }
+        }
+    )
+
+    return {
+        "message": "Plan eliminado correctamente"
+    }

@@ -16,7 +16,7 @@ app = FastAPI(
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "API híbrida de nómina funcionando correctamente"}
+    return {"mensaje": "API híbrida de MEDITECH PLANIFAM funcionando correctamente"}
 
 
 # LOGIN CON JWT

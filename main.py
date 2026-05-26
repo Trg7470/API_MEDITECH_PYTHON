@@ -184,6 +184,15 @@ def eliminar_usuario(id_usuario: int, access: str = Depends(verificar_token)):
 
     return {"mensaje": "Usuario eliminado exitosamente"}
 
+# Expedientes Médicos
+@app.get("/u/e/get")
+def obtener_expediente(access: str = Depends(verificar_token)):
+    expediente = expediente_medico.find_one(
+    )
+    if not expediente:
+        return {"expediente": None}
+    return {"expediente": expediente}
+
 # Monitoreos
 @app.get("/u/m/get/{paciente_id}")
 def obtener_monitoreos(

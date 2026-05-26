@@ -8,7 +8,7 @@ from schemas import Login
 from auth import crear_token, verificar_token
 
 app = FastAPI(
-    title="API RESTful Hibrida de Nómina",
+    title="API RESTful Hibrida de MEDITECH PLANIFAM",
     description="API con FastAPI, PostgreSQL, MongoDB y JWT",
     version="1.0"
 )
@@ -65,3 +65,4 @@ def login(usuario: Login):
         "access_token": token,
         "token_type": "bearer"
     }
+

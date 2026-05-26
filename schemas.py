@@ -26,7 +26,7 @@ class Usuarios(BaseModel):
 
 
 class Pacientes(BaseModel):
-    id_paciente: int
+    id_paciente: int | None = None
     nombre: str
     apellido_paterno: str
     apellido_materno: str

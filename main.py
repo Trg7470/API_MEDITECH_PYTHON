@@ -641,3 +641,192 @@ def delete_plan_personalizado(pacienteId: int, planId: str):
     return {
         "message": "Plan eliminado correctamente"
     }
+
+# METODOS ANTICONCEPTIVOS
+
+# TRAE A TODOS
+@app.get("/metodos_anticonceptivos")
+def get_all_metodos(access: str = Depends(verificar_token)):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM Metodos_Anticonceptivos
+        ORDER BY Id_Metodo
+    """)
+
+    metodos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return metodos
+
+
+# TRAE POR ID
+@app.get("/metodos_anticonceptivos/{id}")
+def get_idp_metodo(id: int, access: str = Depends(verificar_token)):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM Metodos_Anticonceptivos
+        WHERE Id_Metodo = %s
+    """, (id,))
+
+    metodo = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not metodo:
+        raise HTTPException(
+            status_code=404,
+            detail="Método no encontrado"
+        )
+
+    return metodo
+
+
+# CREAR
+@app.post("/metodos_anticonceptivos")
+def create_metodo( metodo: Metodos_Anticonceptivos,access: str = Depends(verificar_token)):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO Metodos_Anticonceptivos
+        (
+            Tipo,
+            Nombre,
+            Descripcion,
+            Efectividad,
+            Uso_Recomendado,
+            Frecuencia,
+            Contraindicaciones,
+            Efectos_Secundarios,
+            Requiere_Receta,
+            Es_Reversible,
+            Disponible
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        RETURNING Id_Metodo
+    """, (
+        metodo.tipo,
+        metodo.nombre,
+        metodo.descripcion,
+        metodo.efectividad,
+        metodo.uso_recomendado,
+        metodo.frecuencia,
+        metodo.contraindicaciones,
+        metodo.efectos_secundarios,
+        metodo.requiere_receta,
+        metodo.es_reversible,
+        metodo.disponible
+    ))
+
+    nuevo_metodo = cursor.fetchone()
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Método creado correctamente",
+        "id_metodo": nuevo_metodo["id_metodo"]
+    }
+
+
+# ACTUALIZAR
+@app.put("/metodos_anticonceptivos/{id}")
+def update_metodo(id: int,metodo: Metodos_Anticonceptivos,access: str = Depends(verificar_token)):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE Metodos_Anticonceptivos
+        SET
+            Tipo = %s,
+            Nombre = %s,
+            Descripcion = %s,
+            Efectividad = %s,
+            Uso_Recomendado = %s,
+            Frecuencia = %s,
+            Contraindicaciones = %s,
+            Efectos_Secundarios = %s,
+            Requiere_Receta = %s,
+            Es_Reversible = %s,
+            Disponible = %s
+        WHERE Id_Metodo = %s
+    """, (
+        metodo.tipo,
+        metodo.nombre,
+        metodo.descripcion,
+        metodo.efectividad,
+        metodo.uso_recomendado,
+        metodo.frecuencia,
+        metodo.contraindicaciones,
+        metodo.efectos_secundarios,
+        metodo.requiere_receta,
+        metodo.es_reversible,
+        metodo.disponible,
+        id
+    ))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Método no encontrado"
+        )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Método actualizado correctamente"
+    }
+
+
+# ELIMINAR
+@app.delete("/metodos_anticonceptivos/{id}")
+def delete_metodo(id: int,access: str = Depends(verificar_token)):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM Metodos_Anticonceptivos
+        WHERE Id_Metodo = %s
+    """, (id,))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Método no encontrado"
+        )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Método eliminado correctamente"
+    }

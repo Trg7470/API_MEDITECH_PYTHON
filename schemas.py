@@ -8,7 +8,6 @@ class Login(BaseModel):
 
 
 class Usuarios(BaseModel):
-    id_usuario: int
     nombre: str
     apellido_paterno: str
     apellido_materno: str
@@ -41,7 +40,6 @@ class Pacientes(BaseModel):
 
 
 class Expediente_Medico(BaseModel):
-    _id: str | None
     paciente_id: int
     antecedentes: str
     tratamientos: str
@@ -56,7 +54,6 @@ class Expediente_Medico(BaseModel):
 
 
 class Monitoreo(BaseModel):
-    _id: str
     fecha_registro: datetime
     presion_arterial: str
     nivel_glucosa: str
@@ -66,7 +63,6 @@ class Monitoreo(BaseModel):
 
 
 class PlanPersonalizado(BaseModel):
-    _id: str
     descripcion: str
     objetivo: str
     tipo_plan: str
@@ -82,12 +78,10 @@ class PlanPersonalizado(BaseModel):
 
 
 class MetodoAnticonceptivo(BaseModel):
-    _id: str | None
     metodo_id: int
 
 
 class Consulta(BaseModel):
-    id_consulta: str
     fecha: datetime
     hora: str
     motivo: str
@@ -96,7 +90,6 @@ class Consulta(BaseModel):
 
 
 class Evento(BaseModel):
-    _id: str
     tipo_evento: str
     fecha: datetime
     hora: str

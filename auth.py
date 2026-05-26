@@ -18,7 +18,7 @@ def verificar_token(credentials: HTTPAuthorizationCredentials = Depends(security
     token = credentials.credentials
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms={ALGORITHM})
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         usuario = payload.get("sub")
 
         if usuario is None:

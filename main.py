@@ -1,14 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from bson import ObjectId
 import bcrypt
+from datetime import datetime
 
 from database import get_connection
-from mongodb import MongoClient
-from schemas import Login
+from mongodb import client, db, expediente_medico
+from schemas import Login, Expediente_Medico, Usuarios, Pacientes, Monitoreo
 from auth import crear_token, verificar_token
 
 app = FastAPI(
-    title="API RESTful Hibrida de Nómina",
+    title="API RESTful MEDITECH_PLANIFAM",
     description="API con FastAPI, PostgreSQL, MongoDB y JWT",
     version="1.0"
 )
@@ -64,4 +65,224 @@ def login(usuario: Login):
     return {
         "access_token": token,
         "token_type": "bearer"
+    }
+
+# Usuarios
+# Obtener Usuarios
+@app.get("/u/get")
+def obtener_usuarios(access: str = Depends(verificar_token)):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+            SELECT Id_Usuario, Nombre, Apellido_Paterno, Apellido_Materno, Sexo, Fecha_Nacimiento, Direccion, Telefono, Especialidad, Cedula_Prof, Correo, Fecha_Registro,
+            Estado, Tipo_Usuario, User_Key FROM Usuarios ORDER BY Id_Usuario ASC  
+        """)
+
+    usuarios = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return {"usuarios": usuarios}
+
+@app.post("/u/create")
+def crear_usuario(usuario: Usuarios, access: str = Depends(verificar_token)):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    contrasena_hash = bcrypt.hashpw(
+        usuario.contrasena.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+
+    cursor.execute("""
+        INSERT INTO Usuarios (Nombre, Apellido_Paterno, Apellido_Materno, Sexo, Fecha_Nacimiento,
+        Direccion, Telefono, Especialidad, Cedula_Prof, Correo, Contrasena, Fecha_Registro,
+        Estado, Tipo_Usuario, User_Key)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING Id_Usuario
+    """, (
+        usuario.nombre,
+        usuario.apellido_paterno,
+        usuario.apellido_materno,
+        usuario.sexo,
+        usuario.fecha_nacimiento,
+        usuario.direccion,
+        usuario.telefono,
+        usuario.especialidad,
+        usuario.cedula_prof,
+        usuario.correo,
+        contrasena_hash,
+        usuario.fecha_registro,
+        usuario.estado,
+        usuario.tipo_usuario,
+        usuario.user_key
+    ))
+
+    nuevo_usuario_id = cursor.fetchone()["id_usuario"]
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"mensaje": "Usuario creado exitosamente", "id_usuario": nuevo_usuario_id}
+
+@app.put("/u/update/{id_usuario}")
+def actualizar_usuario(id_usuario: int, usuario: Usuarios, access: str = Depends(verificar_token)):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    contrasena_hash = bcrypt.hashpw(
+        usuario.contrasena.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+
+    cursor.execute("""
+        UPDATE Usuarios SET Nombre = %s, Apellido_Paterno = %s, Apellido_Materno = %s, Sexo = %s,
+        Fecha_Nacimiento = %s, Direccion = %s, Telefono = %s, Especialidad = %s, Cedula_Prof = %s,
+        Correo = %s, Contrasena = %s, Fecha_Registro = %s, Estado = %s, Tipo_Usuario = %s,
+        User_Key = %s WHERE Id_Usuario = %s
+    """, (
+        usuario.nombre,
+        usuario.apellido_paterno,
+        usuario.apellido_materno,
+        usuario.sexo,
+        usuario.fecha_nacimiento,
+        usuario.direccion,
+        usuario.telefono,
+        usuario.especialidad,
+        usuario.cedula_prof,
+        usuario.correo,
+        contrasena_hash,
+        usuario.fecha_registro,
+        usuario.estado,
+        usuario.tipo_usuario,
+        usuario.user_key,
+        id_usuario
+    ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"mensaje": "Usuario actualizado exitosamente"}
+
+@app.delete("/u/delete/{id_usuario}")
+def eliminar_usuario(id_usuario: int, access: str = Depends(verificar_token)):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM Usuarios WHERE Id_Usuario = %s
+    """, (id_usuario,))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"mensaje": "Usuario eliminado exitosamente"}
+
+# Monitoreos
+@app.get("/u/m/get/{paciente_id}")
+def obtener_monitoreos(
+    paciente_id: int,
+    access: str = Depends(verificar_token)
+):
+    expediente = expediente_medico.find_one(
+        {"pacienteId": paciente_id}
+    )
+    if not expediente:
+        return {"monitoreos": []}
+    monitoreos = expediente.get("monitoreos", [])
+    for monitoreo in monitoreos:
+        if "_id" in monitoreo:
+            monitoreo["_id"] = str(monitoreo["_id"])
+    return {"monitoreos": monitoreos}
+
+@app.post("/u/m/create/{paciente_id}")
+def crear_monitoreo(
+    paciente_id: int,
+    monitoreo: Monitoreo,
+    access: str = Depends(verificar_token)
+):
+
+    monitoreo_id = ObjectId()
+
+    nuevo_monitoreo = {
+        "_id": monitoreo_id,
+        "fechaRegistro": datetime.now(),
+        "presionArterial": monitoreo.presion_arterial,
+        "nivelGlucosa": monitoreo.nivel_glucosa,
+        "temperatura": monitoreo.temperatura,
+        "sintomas": monitoreo.sintomas,
+        "comentarios": monitoreo.comentarios
+    }
+
+    resultado = expediente_medico.update_one(
+        {"pacienteId": paciente_id},
+        {"$push": {"monitoreos": nuevo_monitoreo}}
+    )
+
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    return {
+        "mensaje": "Monitoreo creado exitosamente",
+        "_id": str(monitoreo_id)
+    }
+
+@app.put("/u/m/update/{paciente_id}/{monitoreo_id}")
+def actualizar_monitoreo(
+    paciente_id: int,
+    monitoreo_id: str,
+    monitoreo: Monitoreo,
+    access: str = Depends(verificar_token)
+):
+    resultado = expediente_medico.update_one(
+        {
+            "pacienteId": paciente_id,
+            "monitoreos._id": ObjectId(monitoreo_id)
+        },
+        {
+            "$set": {
+                "monitoreos.$.fechaRegistro": monitoreo.fecha_registro,
+                "monitoreos.$.presionArterial": monitoreo.presion_arterial,
+                "monitoreos.$.nivelGlucosa": monitoreo.nivel_glucosa,
+                "monitoreos.$.temperatura": monitoreo.temperatura,
+                "monitoreos.$.sintomas": monitoreo.sintomas,
+                "monitoreos.$.comentarios": monitoreo.comentarios
+            }
+        }
+    )
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Monitoreo no encontrado"
+        )
+    return {
+        "mensaje": "Monitoreo actualizado exitosamente"
+    }
+
+@app.delete("/u/m/delete/{paciente_id}/{monitoreo_id}")
+def eliminar_monitoreo(
+    paciente_id: int,
+    monitoreo_id: str,
+    access: str = Depends(verificar_token)
+):
+    resultado = expediente_medico.update_one(
+        {"pacienteId": paciente_id},
+        {"$pull": {"monitoreos": {"_id": ObjectId(monitoreo_id)}}}
+    )
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Monitoreo no encontrado"
+        )
+    return {
+        "mensaje": "Monitoreo eliminado exitosamente"
     }

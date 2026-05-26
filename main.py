@@ -5,7 +5,7 @@ from datetime import datetime
 
 from database import get_connection
 from mongodb import client, db, expediente_medico
-from schemas import Login, Expediente_Medico, Usuarios, Pacientes, Monitoreo
+from schemas import Login, Expediente_Medico, Usuarios, Pacientes, Monitoreo, PlanPersonalizado
 from auth import crear_token, verificar_token
 
 app = FastAPI(
@@ -16,7 +16,7 @@ app = FastAPI(
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "API híbrida de nómina funcionando correctamente"}
+    return {"mensaje": "API híbrida de MEDITECH PLANIFAM funcionando correctamente"}
 
 
 # LOGIN CON JWT
@@ -294,4 +294,184 @@ def eliminar_monitoreo(
         )
     return {
         "mensaje": "Monitoreo eliminado exitosamente"
+    }
+
+
+# PACIENTES
+
+# Consulta completa (todos los pacientes)
+@app.get("/pacientes", dependencies=[Depends(verificar_token)])
+def get_pacientes():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT * FROM Pacientes
+        ORDER BY Id_Paciente
+    """)
+
+    pacientes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return pacientes
+
+# Consulta Paciente por Id
+@app.get("/pacientes/{id}", dependencies=[Depends(verificar_token)])
+def get_paciente(id: int):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT * FROM Pacientes
+        WHERE Id_Paciente = %s
+    """, (id,))
+
+    paciente = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not paciente:
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    return paciente
+
+# CRUD PACIENTES
+# Crear paciente
+@app.post("/pacientes", dependencies=[Depends(verificar_token)])
+def create_paciente(paciente: Pacientes):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO Pacientes (
+            Nombre,
+            Apellido_Paterno,
+            Apellido_Materno,
+            Sexo,
+            Fecha_Nacimiento,
+            Direccion,
+            Correo,
+            Telefono,
+            Estado_Salud,
+            Id_Usuario_Paciente
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        RETURNING Id_Paciente
+    """, (
+        paciente.nombre,
+        paciente.apellido_paterno,
+        paciente.apellido_materno,
+        paciente.sexo,
+        paciente.fecha_nacimiento,
+        paciente.direccion,
+        paciente.correo,
+        paciente.telefono,
+        paciente.estado_salud,
+        paciente.id_usuario_paciente
+    ))
+
+    nuevo_paciente = cursor.fetchone()
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Paciente creado correctamente",
+        "id_paciente": nuevo_paciente["id_paciente"]
+    }
+
+# Actualizar paciente
+@app.put("/pacientes/{id}", dependencies=[Depends(verificar_token)])
+def update_paciente(id: int, paciente: Pacientes):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE Pacientes
+        SET
+            Nombre = %s,
+            Apellido_Paterno = %s,
+            Apellido_Materno = %s,
+            Sexo = %s,
+            Fecha_Nacimiento = %s,
+            Direccion = %s,
+            Correo = %s,
+            Telefono = %s,
+            Estado_Salud = %s,
+            Id_Usuario_Paciente = %s
+        WHERE Id_Paciente = %s
+    """, (
+        paciente.nombre,
+        paciente.apellido_paterno,
+        paciente.apellido_materno,
+        paciente.sexo,
+        paciente.fecha_nacimiento,
+        paciente.direccion,
+        paciente.correo,
+        paciente.telefono,
+        paciente.estado_salud,
+        paciente.id_usuario_paciente,
+        id
+    ))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Paciente actualizado correctamente"
+    }
+
+# Eliminar paciente
+@app.delete("/pacientes/{id}", dependencies=[Depends(verificar_token)])
+def delete_paciente(id: int):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM Pacientes
+        WHERE Id_Paciente = %s
+    """, (id,))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+
+        cursor.close()
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail="Paciente no encontrado"
+        )
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Paciente eliminado correctamente"
     }

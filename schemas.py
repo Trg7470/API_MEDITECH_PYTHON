@@ -40,7 +40,7 @@ class Pacientes(BaseModel):
 
 
 class Expediente_Medico(BaseModel):
-    paciente_id: int
+    pacienteId: int
     antecedentes: str
     tratamientos: str
     notas_medicas: str

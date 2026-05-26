@@ -665,7 +665,7 @@ def get_all_metodos(access: str = Depends(verificar_token)):
     return metodos
 
 
-# TRAE POR ID
+# TRAE POR ID .M_A
 @app.get("/metodos_anticonceptivos/{id}")
 def get_idp_metodo(id: int, access: str = Depends(verificar_token)):
 
@@ -692,7 +692,7 @@ def get_idp_metodo(id: int, access: str = Depends(verificar_token)):
     return metodo
 
 
-# CREAR
+# CREAR M_A
 @app.post("/metodos_anticonceptivos")
 def create_metodo( metodo: Metodos_Anticonceptivos,access: str = Depends(verificar_token)):
 
@@ -743,7 +743,7 @@ def create_metodo( metodo: Metodos_Anticonceptivos,access: str = Depends(verific
     }
 
 
-# ACTUALIZAR
+# ACTUALIZAR M_A
 @app.put("/metodos_anticonceptivos/{id}")
 def update_metodo(id: int,metodo: Metodos_Anticonceptivos,access: str = Depends(verificar_token)):
 
@@ -800,7 +800,7 @@ def update_metodo(id: int,metodo: Metodos_Anticonceptivos,access: str = Depends(
     }
 
 
-# ELIMINAR
+# ELIMINAR M_A
 @app.delete("/metodos_anticonceptivos/{id}")
 def delete_metodo(id: int,access: str = Depends(verificar_token)):
 
@@ -829,4 +829,67 @@ def delete_metodo(id: int,access: str = Depends(verificar_token)):
 
     return {
         "mensaje": "Método eliminado correctamente"
+    }
+
+# EXPEDIENTE MEDICO
+
+#TRAE TODOS LOS EXP.
+@app.get("/expedientes")
+def get_all_expedientes(access: str = Depends(verificar_token)
+):
+    expedientes = expediente_medico.find()
+    lista = []
+    for expediente in expedientes:
+        lista.append(convert_bson(expediente))
+    return lista
+
+
+#TRAE POR ID PACIENTE
+@app.get("/expedientes/{paciente_id}")
+def get_idp_expediente(paciente_id: int,access: str = Depends(verificar_token)
+):
+    expediente = expediente_medico.find_one({
+        "pacienteId": paciente_id
+    })
+    if not expediente:
+        raise HTTPException(
+            status_code=404,
+            detail="Expediente no encontrado"
+        )
+    return convert_bson(expediente)
+
+
+# CREAR E_P
+@app.post("/expedientes")
+def create_expediente(expediente: Expediente_Medico,access: str = Depends(verificar_token)
+):
+    nuevo_expediente = expediente.dict()
+    resultado = expediente_medico.insert_one(
+        nuevo_expediente
+    )
+    return {
+        "mensaje": "Expediente creado correctamente",
+        "id": str(resultado.inserted_id)
+    }
+
+
+# ACTUALIZAR E_P
+@app.put("/expedientes/{paciente_id}")
+def update_expediente(paciente_id: int,expediente: Expediente_Medico,access: str = Depends(verificar_token)):
+
+    datos_actualizados = expediente.dict()
+
+    resultado = expediente_medico.update_one(
+        {"pacienteId": paciente_id},
+        {"$set": datos_actualizados}
+    )
+
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Expediente no encontrado"
+        )
+
+    return {
+        "mensaje": "Expediente actualizado correctamente"
     }

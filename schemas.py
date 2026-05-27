@@ -98,15 +98,15 @@ class Evento(BaseModel):
 
 
 class Metodos_Anticonceptivos(BaseModel):
-    Id_Metodo: int
-    Tipo: str
-    Nombre: str
-    Descripcion: str
-    Efectividad: float
-    Uso_Recomendado: str
-    Frecuencia: str
-    Contraindicaciones: str
-    Efectos_Secundarios: str
-    Requiere_Receta: bool
-    Es_Reversible: bool
-    Disponible: bool
+    id_metodo: int
+    tipo: str
+    nombre: str
+    descripcion: str
+    efectividad: float
+    uso_recomendado: str
+    frecuencia: str
+    contraindicaciones: str
+    efectos_secundarios: str
+    requiere_receta: bool
+    es_reversible: bool
+    disponible: bool

@@ -78,7 +78,7 @@ class PlanPersonalizado(BaseModel):
 
 
 class MetodoAnticonceptivo(BaseModel):
-    metodo_id: int
+    metodoId: int
 
 
 class Consulta(BaseModel):

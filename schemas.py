@@ -43,14 +43,14 @@ class Expediente_Medico(BaseModel):
     pacienteId: int
     antecedentes: str
     tratamientos: str
-    notas_medicas: str
-    planes_personalizados: list["PlanPersonalizado"]
+    notasMedicas: str
+    fechaCreacion: datetime
+    fechaActualizacion: datetime
+    estado: str
+    planesPersonalizados: list["PlanPersonalizado"]
     consultas: list["Consulta"]
     eventos: list["Evento"]
     monitoreos: list["Monitoreo"]
-    fecha_creacion: datetime
-    fecha_actualizacion: datetime
-    estado: str
 
 
 class Monitoreo(BaseModel):
@@ -98,15 +98,15 @@ class Evento(BaseModel):
 
 
 class Metodos_Anticonceptivos(BaseModel):
-    id_metodo: int
-    tipo: str
-    nombre: str
-    descripcion: str
-    efectividad: float
-    uso_recomendado: str
-    frecuencia: str
-    contraindicaciones: str
-    efectos_secundarios: str
-    requiere_receta: bool
-    es_reversible: bool
-    disponible: bool
+    Id_Metodo: int
+    Tipo: str
+    Nombre: str
+    Descripcion: str
+    Efectividad: float
+    Uso_Recomendado: str
+    Frecuencia: str
+    Contraindicaciones: str
+    Efectos_Secundarios: str
+    Requiere_Receta: bool
+    Es_Reversible: bool
+    Disponible: bool

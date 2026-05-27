@@ -5,7 +5,7 @@ from datetime import datetime
 
 from database import get_connection
 from mongodb import client, db, expediente_medico, convert_bson
-from schemas import Login, Expediente_Medico, Usuarios, Pacientes, Monitoreo
+from schemas import Login, Expediente_Medico, Usuarios, Pacientes, Monitoreo,Metodos_Anticonceptivos
 from auth import crear_token, verificar_token
 
 app = FastAPI(
